@@ -32,7 +32,7 @@ This returns JSON: `{"vault": "<path>"|null, "notesRoot": "<string>", "source": 
 
 - If `source` is `"config"`: the working note root is `<vault>/<notesRoot>/`.
 - If `source` is `"none"`: warn the user once ("No socrates.config.json found — using ./socrates-notes/ instead."), then use `./socrates-notes/` as the working note root, creating it if needed.
-- If the command itself fails to produce that JSON at all (permission denied, no output, a crash, or anything that isn't valid JSON with a `source` field) — this is different from it succeeding and reporting `source: "none"` — tell the user specifically that `resolve-config.sh` could not run (most likely a pending or declined permission prompt for this script), not that no config file was found, then fall back to `./socrates-notes/` the same way.
+- If the command itself fails to produce that JSON at all (no output, a crash, or anything that isn't valid JSON with a `source` field) — this is different from it succeeding and reporting `source: "none"` — check *why* before telling the user it's a permission problem: an error mentioning "jq is required" means `jq` isn't installed (tell them that, not about permissions); an error mentioning "not valid JSON" means their `socrates.config.json` has a syntax error (tell them to fix their config, not about permissions); anything else is most likely a pending or declined permission prompt for this script. In all three cases, fall back to `./socrates-notes/` the same way.
 
 The working note for a topic lives at `<working note root>/<Topic>/<Topic>.md`,
 where `<Topic>` is the **exact, verbatim topic argument** the user typed after
@@ -100,7 +100,10 @@ question toward a more advanced one on that same strand:
 
 Stop probing a strand once you've localized the boundary; stop probing
 altogether once every strand you identified has been covered. After each
-strand, append its concepts to the Understanding Map (status `known` /
+strand, append its concepts to the Understanding Map — recording the
+strand's own name or label in the `Strand` column for every concept on it,
+since Resume depends on that column to know which strands are already
+covered — with status `known` /
 `unknown`, `established_via: calibration`) and write the note to disk
 before moving to the next strand, so an interruption mid-Probe only loses
 the strand in progress, not the whole phase. Probe alone only ever

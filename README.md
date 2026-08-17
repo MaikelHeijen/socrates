@@ -59,16 +59,20 @@ don't have one yet):
 {
   "permissions": {
     "allow": [
-      "Bash(~/.claude/plugins/cache/socrates/socrates/*/scripts/resolve-config.sh*)",
-      "Bash(~/.claude/plugins/cache/socrates/socrates/*/scripts/svg-check.sh*)"
+      "Bash(/Users/<you>/.claude/plugins/cache/socrates/socrates/*/scripts/resolve-config.sh*)",
+      "Bash(/Users/<you>/.claude/plugins/cache/socrates/socrates/*/scripts/svg-check.sh*)"
     ]
   }
 }
 ```
 
-The `*` before `/scripts/...` matches the installed version segment, so this
-survives plugin updates. If you're developing locally with `--plugin-dir`,
-substitute that directory instead.
+Replace `<you>` with your username (on Linux, use `/home/<you>/...` instead
+of `/Users/<you>/...`). Use the **full, absolute path** — `~` does not get
+expanded inside a permission pattern, so a pattern starting with `~` silently
+never matches and the prompt keeps appearing. The `*` before `/scripts/...`
+matches the installed version segment, so this survives plugin updates. If
+you're developing locally with `--plugin-dir`, substitute that directory's
+absolute path instead.
 
 A broader pattern like `Bash(*resolve-config.sh*)` also technically works,
 but it's a substring match over the *entire* command string — it will also
