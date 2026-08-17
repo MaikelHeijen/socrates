@@ -1,5 +1,6 @@
 {
   "name": "socrates",
+  "description": "A Socratic AI tutor for Claude Code.",
   "owner": {
     "name": "Maikel Heijen"
   },
