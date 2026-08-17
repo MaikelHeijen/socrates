@@ -49,19 +49,29 @@ the rest of the session — use its exact casing for both the folder and the
 writing it, so the file you look for is the file that's actually there.
 
 If the user ran `/socrates:teach` with **no topic argument**: use `Glob` to
-list every `<Topic>/<Topic>.md` file directly under the working note root.
+list every `<Topic>/<Topic>.md` file directly under the working note root,
+**and also** under `./socrates-notes/` (relative to the current directory),
+if that folder exists and isn't the same location — sessions can be
+sitting there from before a config existed, or from a previous config
+resolution, and would otherwise silently vanish from view the moment the
+config changes.
 
-- **None exist**: ask what topic they'd like to start, then proceed to
-  Probe as normal once they answer.
+- **None exist anywhere**: ask what topic they'd like to start, then
+  proceed to Probe as normal once they answer.
 - **One or more exist**: read each one's frontmatter (`topic`, `status`,
   `progress_node`) and present them via `AskUserQuestion` — one option per
   existing topic, labeled with the topic name plus a short status hint
   (e.g. "Differential forms — teaching, node: wedge-products" or
   "Git branching — done"), plus one further option to start a brand new
-  topic. If they pick an existing topic, treat it exactly as if they had
-  typed that topic verbatim after `/socrates:teach` and continue at the
-  Resume check below. If they pick "start a new topic," ask what it is,
-  then proceed to Probe as normal.
+  topic. If they pick an existing topic, resume it at the **actual file
+  path you found it at** — not by reconstructing
+  `<working note root>/<Topic>/<Topic>.md` from the current default root,
+  since a topic found under `./socrates-notes/` may not live under the
+  current working note root at all. Continue at the Resume check below
+  using that path. If they pick "start a new topic," ask what it is, then
+  proceed to Probe as normal (a brand new topic always uses the current
+  working note root, never `./socrates-notes/`, unless that's what the
+  root resolved to in the first place).
 
 ## 1. Resume check
 
