@@ -34,4 +34,31 @@ if [ "$PLUGIN_SOURCE" != "./" ]; then
 fi
 echo "PASS: marketplace.json points to plugin root"
 
+HOOKS_JSON="$ROOT/hooks/hooks.json"
+if ! jq -e '.hooks.SessionStart' "$HOOKS_JSON" >/dev/null 2>&1; then
+  echo "FAIL: hooks.json must wrap event names in a top-level 'hooks' key"
+  exit 1
+fi
+echo "PASS: hooks.json has the required top-level 'hooks' wrapper"
+
+if jq -e 'has("hooks")' "$PLUGIN_JSON" >/dev/null 2>&1; then
+  echo "FAIL: plugin.json must NOT declare a 'hooks' field (it collides with hooks/hooks.json auto-discovery and breaks hook loading)"
+  exit 1
+fi
+echo "PASS: plugin.json does not redeclare the hooks field"
+
+HOOK_SCRIPT="$ROOT/hooks/socrates-banner.sh"
+if [ ! -x "$HOOK_SCRIPT" ]; then
+  echo "FAIL: hooks/socrates-banner.sh must exist and be executable"
+  exit 1
+fi
+echo "PASS: hook script exists and is executable"
+
+SKILL_FILE="$ROOT/skills/teach/SKILL.md"
+if ! grep -q "^name: teach$" "$SKILL_FILE"; then
+  echo "FAIL: skills/teach/SKILL.md must declare 'name: teach' in its frontmatter"
+  exit 1
+fi
+echo "PASS: teach skill frontmatter declares its name"
+
 echo "ALL TESTS PASSED"

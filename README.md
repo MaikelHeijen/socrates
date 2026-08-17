@@ -13,6 +13,8 @@ needed.
 ## Prerequisites
 
 - [Claude Code](https://claude.com/claude-code)
+- `jq` (usually pre-installed on macOS; `brew install jq` / `apt install
+  jq` otherwise)
 - `rsvg-convert`, for rendering diagrams so Socrates can check its own
   work: `brew install librsvg` (macOS) or your distro's `librsvg2-bin` /
   `librsvg` package.
@@ -47,26 +49,32 @@ created, one subfolder per topic. Without this file, Socrates uses
 ## Avoiding permission prompts (optional)
 
 Socrates' helper scripts (`resolve-config.sh`, `svg-check.sh`) run through
-Claude Code's Bash tool by their full installed path, which varies by how you
-installed the plugin — so a plain basename pattern won't match. To
-pre-approve them regardless of install location, merge these two entries
-into the `permissions.allow` array in your `~/.claude/settings.json` (create
-the file with this content if you don't have one yet):
+Claude Code's Bash tool by their full installed path, so depending on your
+permission mode you may be asked to approve them the first time they run.
+To pre-approve them, merge these entries into the `permissions.allow` array
+in your `~/.claude/settings.json` (create the file with this content if you
+don't have one yet):
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Bash(*resolve-config.sh*)",
-      "Bash(*svg-check.sh*)"
+      "Bash(~/.claude/plugins/cache/socrates/socrates/*/scripts/resolve-config.sh*)",
+      "Bash(~/.claude/plugins/cache/socrates/socrates/*/scripts/svg-check.sh*)"
     ]
   }
 }
 ```
 
-The leading `*` matches whatever install path prefix comes before the
-script name, since `${CLAUDE_PLUGIN_ROOT}` itself can't be used inside a
-permission pattern.
+The `*` before `/scripts/...` matches the installed version segment, so this
+survives plugin updates. If you're developing locally with `--plugin-dir`,
+substitute that directory instead.
+
+A broader pattern like `Bash(*resolve-config.sh*)` also technically works,
+but it's a substring match over the *entire* command string — it will also
+auto-approve any unrelated command that merely contains that text somewhere
+(including as a trailing comment), which is a real risk, not a theoretical
+one. Prefer the path-anchored form above.
 
 ## Use
 

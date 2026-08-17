@@ -1,27 +1,36 @@
 #!/bin/bash
 set -euo pipefail
 
+if ! command -v jq >/dev/null 2>&1; then
+  exit 0
+fi
+
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INPUT=$(cat)
-CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
+CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null) || exit 0
 
 if [ -z "$CWD" ] || [ ! -d "$CWD" ]; then
   exit 0
 fi
 
-CONFIG_INFO=$("$PLUGIN_ROOT/scripts/resolve-config.sh" "$CWD")
-SOURCE=$(echo "$CONFIG_INFO" | jq -r '.source')
+CONFIG_INFO=$("$PLUGIN_ROOT/scripts/resolve-config.sh" "$CWD" 2>/dev/null) || exit 0
+SOURCE=$(echo "$CONFIG_INFO" | jq -r '.source' 2>/dev/null) || exit 0
 
 HAS_NOTES_FOLDER=false
 if [ -d "$CWD/socrates-notes" ]; then
   HAS_NOTES_FOLDER=true
 fi
 
-if [ "$SOURCE" != "config" ] && [ "$HAS_NOTES_FOLDER" != "true" ]; then
+HAS_CONFIG_FILE=false
+if [ -f "$CWD/socrates.config.json" ]; then
+  HAS_CONFIG_FILE=true
+fi
+
+if [ "$SOURCE" != "config" ] && [ "$HAS_NOTES_FOLDER" != "true" ] && [ "$HAS_CONFIG_FILE" != "true" ]; then
   exit 0
 fi
 
-VERSION=$(jq -r '.version // "0.0.0"' "$PLUGIN_ROOT/.claude-plugin/plugin.json")
+VERSION=$(jq -r '.version // "0.0.0"' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null) || VERSION="0.0.0"
 
 # Build banner text with ANSI styling (bold cyan)
 BOLD_CYAN=$(printf '\033[1m\033[36m')

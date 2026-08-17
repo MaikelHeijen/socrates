@@ -43,4 +43,36 @@ if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
 fi
 echo "PASS: banner shown when socrates-notes/ already exists (valid JSON with systemMessage)"
 
+# Case 4: jq missing -> silent, no crash
+FAKE_BIN="$TMP/fakebin"
+mkdir -p "$FAKE_BIN"
+OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/withconfig" | env PATH="$FAKE_BIN" "$BANNER" 2>/dev/null || true)
+if [ -n "$OUTPUT" ]; then
+  echo "FAIL: expected silent output when jq is missing, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: silent when jq is missing"
+
+# Case 5: malformed config -> silent, no crash (not the caller's problem to see a jq stack trace)
+mkdir -p "$TMP/malformed"
+printf '{"vault": broken' > "$TMP/malformed/socrates.config.json"
+OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/malformed" | "$BANNER" 2>/dev/null || true)
+if [ -n "$OUTPUT" ]; then
+  echo "FAIL: expected silent output for malformed config, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: silent (not crashing) when config is malformed"
+
+# Case 6: config present without a vault key -> still recognized as an active workspace
+mkdir -p "$TMP/novault"
+cat > "$TMP/novault/socrates.config.json" <<'EOF'
+{"notesRoot": "Resources"}
+EOF
+OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/novault" | "$BANNER")
+if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
+  echo "FAIL: expected banner when config file exists even without a vault key, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: banner shown when config file exists even without a vault key"
+
 echo "ALL TESTS PASSED"

@@ -57,9 +57,13 @@ path.
   empty Understanding Map, no Plan section yet, and `progress_node: null`.
   Then proceed to Probe.
 - **Exists with `status: probing`**: read the existing Understanding Map.
-  Resume Probe on the strands not yet covered (skip strands already
-  present in the Understanding Map). Tell the user in one sentence that
-  you're resuming the calibration phase.
+  Use the Strand column to identify which strands are already covered,
+  and resume Probe only on the strands not yet covered. Tell the user in
+  one sentence that you're resuming the calibration phase. If the
+  Understanding Map already covers every strand you can identify for the
+  topic, treat Probe as complete and proceed directly to Plan rather than
+  asking more questions, even though `status` will not read `planning`
+  until Plan's own step for that begins.
 - **Exists with `status: planning`**: the Understanding Map is complete
   but Plan didn't finish (e.g. interrupted during fact-checking). Resume
   Plan from the existing Understanding Map — re-running Plan's reasoning
@@ -70,6 +74,9 @@ path.
   sentence what you're resuming and from where.
 - **Exists with `status: done`**: tell the user this topic is already
   complete and ask if they want to review it or start a related topic.
+  If they want to review: walk back through the Session Log with them
+  without changing `status`. If they want a related or new topic: begin
+  a fresh Probe for that topic instead — it's a different note.
 
 ## 2. Probe — calibration checks
 
@@ -164,12 +171,19 @@ For the current `progress_node`:
    wrong-reason or wrong-answer-right-reasoning split, or `unknown` if
    the reasoning was fundamentally wrong regardless of the conclusion. If
    there was a misconception, add a short note of exactly what it was.
-5. Append a Session Log entry for this node (see format below), then
+5. If the status just recorded is `partial` or `unknown`, don't advance
+   yet: re-explain the concept from a different angle (a different
+   example or framing, not a verbatim repeat), then run one more applied
+   check on it. If it comes back `known` this time, proceed as normal. If
+   it's still not `known` after this one remediation pass, record it
+   as-is, note in the session log that this concept needs revisiting, and
+   move on anyway — don't loop indefinitely on a single node.
+6. Append a Session Log entry for this node (see format below), then
    update `progress_node` to the next node whose prerequisites are now
    satisfied, and write the note to disk. Do this after every single
    node — never batch multiple nodes before saving — so the session can
    be interrupted and resumed at any point.
-6. If the node just completed was the last one in the graph, set
+7. If the node just completed was the last one in the graph, set
    `status: done` and tell the user; otherwise continue to the next
    node without waiting to be asked, unless the user has questions about
    what was just taught (always pause for those).
@@ -182,14 +196,13 @@ type: socrates-session
 topic: <Topic>
 status: probing | planning | teaching | done
 progress_node: <node-id-or-null>
-updated: YYYY-MM-DD
 ---
 
 ## Understanding Map
 
-| Concept | Status | Established via | Notes |
-|---|---|---|---|
-| <concept> | known / partial / unknown | calibration / applied | <misconception, if any> |
+| Strand | Concept | Status | Established via | Notes |
+|---|---|---|---|---|
+| <strand> | <concept> | known / partial / unknown | calibration / applied | <misconception, if any> |
 
 ## Plan
 
@@ -227,3 +240,8 @@ graph TD
   tell the user specifically that the script could not run (likely a
   pending or declined permission prompt), not that no config was found,
   then fall back to `./socrates-notes/` the same way.
+- `resolve-config.sh` reports the config file is not valid JSON (exit
+  code 3): tell the user their `socrates.config.json` has a syntax error
+  and needs fixing, then fall back to `./socrates-notes/` — do not tell
+  them a permission prompt is the cause, since this is a different,
+  distinct failure from a script that couldn't run at all.
