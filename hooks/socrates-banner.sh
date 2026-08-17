@@ -13,9 +13,12 @@ if [ -z "$CWD" ] || [ ! -d "$CWD" ]; then
   exit 0
 fi
 
-CONFIG_INFO=$("$PLUGIN_ROOT/scripts/resolve-config.sh" "$CWD" 2>/dev/null) || exit 0
-SOURCE=$(echo "$CONFIG_INFO" | jq -r '.source' 2>/dev/null) || exit 0
-
+# Deliberately local-only: a SessionStart hook fires before the user has
+# typed anything, so it can't know whether /socrates:teach will be invoked
+# this session. A global ~/socrates.config.json (see resolve-config.sh)
+# intentionally does NOT count here, even though it does make note-saving
+# work from anywhere — otherwise this banner would show in every Claude
+# Code session on the machine, not just ones actually touching Socrates.
 HAS_NOTES_FOLDER=false
 if [ -d "$CWD/socrates-notes" ]; then
   HAS_NOTES_FOLDER=true
@@ -26,7 +29,7 @@ if [ -f "$CWD/socrates.config.json" ]; then
   HAS_CONFIG_FILE=true
 fi
 
-if [ "$SOURCE" != "config" ] && [ "$HAS_NOTES_FOLDER" != "true" ] && [ "$HAS_CONFIG_FILE" != "true" ]; then
+if [ "$HAS_NOTES_FOLDER" != "true" ] && [ "$HAS_CONFIG_FILE" != "true" ]; then
   exit 0
 fi
 

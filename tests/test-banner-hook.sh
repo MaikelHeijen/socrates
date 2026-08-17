@@ -60,15 +60,19 @@ if [ -n "$OUTPUT" ]; then
 fi
 echo "PASS: silent when jq is missing"
 
-# Case 5: malformed config -> silent, no crash (not the caller's problem to see a jq stack trace)
+# Case 5: malformed config -> banner still shows, no crash. The banner only
+# checks the config file's *presence* (a plain `[ -f ... ]` test, no jq call
+# on its content), so a syntax error inside the file can't crash it — that
+# risk lives in resolve-config.sh, exercised separately when the skill
+# actually reads the config, not in this cosmetic presence check.
 mkdir -p "$TMP/malformed"
 printf '{"vault": broken' > "$TMP/malformed/socrates.config.json"
 OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/malformed" | env HOME="$ISOLATED_HOME" "$BANNER" 2>/dev/null || true)
-if [ -n "$OUTPUT" ]; then
-  echo "FAIL: expected silent output for malformed config, got: $OUTPUT"
+if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v" 2>/dev/null; then
+  echo "FAIL: expected banner to still show (and not crash) for a malformed-but-present config, got: $OUTPUT"
   exit 1
 fi
-echo "PASS: silent (not crashing) when config is malformed"
+echo "PASS: shows (without crashing) when the local config file is malformed, since presence alone is checked"
 
 # Case 6: config present without a vault key -> still recognized as an active workspace
 mkdir -p "$TMP/novault"
@@ -82,9 +86,13 @@ if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
 fi
 echo "PASS: banner shown when config file exists even without a vault key"
 
-# Case 7: no local config anywhere, but a global ~/socrates.config.json is
-# set up -> banner still shows, since the global config makes every
-# directory an active workspace for note-saving purposes.
+# Case 7: no local config/notes folder, but a global ~/socrates.config.json
+# is set up -> still SILENT. The banner is deliberately local-only: a
+# SessionStart hook fires before the user types anything, so it can't know
+# whether /socrates:teach will be used this session, and a global config
+# making every directory "active" would mean this banner fires in every
+# Claude Code session on the machine, not just Socrates ones. Note-saving
+# via resolve-config.sh's own global fallback is unaffected by this.
 FAKE_HOME="$TMP/fakehome"
 mkdir -p "$FAKE_HOME"
 cat > "$FAKE_HOME/socrates.config.json" <<'EOF'
@@ -93,10 +101,10 @@ EOF
 ANYWHERE="$TMP/anywhere-unrelated"
 mkdir -p "$ANYWHERE"
 OUTPUT=$(printf '{"cwd": "%s"}' "$ANYWHERE" | env HOME="$FAKE_HOME" "$BANNER")
-if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
-  echo "FAIL: expected banner in an unrelated dir when a global config is set up, got: $OUTPUT"
+if [ -n "$OUTPUT" ]; then
+  echo "FAIL: expected silence in an unrelated dir even with a global config configured, got: $OUTPUT"
   exit 1
 fi
-echo "PASS: banner shown anywhere once a global ~/socrates.config.json is configured"
+echo "PASS: still silent in an unrelated dir when only a global config exists (no local trace)"
 
 echo "ALL TESTS PASSED"

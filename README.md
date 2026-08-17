@@ -155,9 +155,12 @@ having to remember and retype the exact topic string.
   local or global (see Configure above).
 - `scripts/svg-check.sh` — renders a diagram and hands it back so a
   sub-agent can look at what it drew.
-- `hooks/socrates-banner.sh` — a startup banner, shown in any directory
-  that resolves to an active Socrates workspace (which is every
-  directory, once you've set up a global `~/socrates.config.json`).
+- `hooks/socrates-banner.sh` — a startup banner, shown only in a
+  directory with a *local* `socrates.config.json` or `socrates-notes/`
+  folder. Deliberately doesn't count a global config: it fires before
+  you've typed anything, so it can't know you're about to run
+  `/socrates:teach`, and a global config would otherwise show it in
+  every Claude Code session on your machine.
 
 ## License
 
