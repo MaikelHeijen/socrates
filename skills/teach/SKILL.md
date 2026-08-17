@@ -103,11 +103,11 @@ altogether once every strand you identified has been covered. After each
 strand, append its concepts to the Understanding Map — recording the
 strand's own name or label in the `Strand` column for every concept on it,
 since Resume depends on that column to know which strands are already
-covered — with status `known` /
-`unknown`, `established_via: calibration`) and write the note to disk
-before moving to the next strand, so an interruption mid-Probe only loses
-the strand in progress, not the whole phase. Probe alone only ever
-produces `known` or `unknown`; `partial` is reserved for applied checks
+covered — with status `known` / `unknown` and `established_via: calibration`,
+and write the note to disk before moving to the next strand, so an
+interruption mid-Probe only loses the strand in progress, not the whole
+phase. Probe alone only ever produces `known` or `unknown`; `partial` is
+reserved for applied checks
 (see the Exception below and section 4).
 
 Exception: if an answer is a close borderline case you're not confident
