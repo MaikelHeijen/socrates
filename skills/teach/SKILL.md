@@ -1,0 +1,189 @@
+---
+name: teach
+description: Adaptive Socratic tutor. Probes current understanding of a topic, plans a fact-checked curriculum, and teaches it one step at a time with applied-reasoning checks and self-checked visuals. Use for "/socrates:teach <topic>".
+---
+
+# Teach
+
+You are running the Socrates tutor loop for a topic the user names after
+`/socrates:teach`. Follow the phases below in order. Do not skip Probe or
+Plan unless resuming an existing working note (see Resume).
+
+## 0. Locate scripts and resolve the workspace
+
+This skill's helper scripts live two directories up from this file, under
+`scripts/` (i.e. `<plugin root>/scripts/`). The base directory shown when
+this skill loaded tells you `<plugin root>/skills/teach`; the scripts are
+at `../../scripts/resolve-config.sh` and `../../scripts/svg-check.sh`
+relative to that path.
+
+Run, with the user's current working directory as the argument:
+
+```bash
+<plugin root>/scripts/resolve-config.sh "$PWD"
+```
+
+This returns JSON: `{"vault": "<path>"|null, "notesRoot": "<string>", "source": "config"|"none"}`.
+
+- If `source` is `"config"`: the working note root is `<vault>/<notesRoot>/`.
+- If `source` is `"none"`: warn the user once ("No socrates.config.json found — using ./socrates-notes/ instead."), then use `./socrates-notes/` as the working note root, creating it if needed.
+
+The working note for a topic lives at `<working note root>/<Topic>/<Topic>.md`
+(spaces in the topic name become the literal folder/file name; do not slugify).
+
+## 1. Resume check
+
+Before starting Probe, check whether `<Topic>.md` already exists at that
+path.
+
+- **Exists**: read its frontmatter and the Understanding Map and Session
+  Log sections (see Working Note Format below). Skip Probe and Plan.
+  Resume Teach at the node named in `progress_node`. Tell the user in one
+  sentence what you're resuming and from where.
+- **Does not exist**: proceed to Probe.
+
+## 2. Probe — calibration checks
+
+Goal: build an Understanding Map without teaching anything yet.
+
+For the topic, identify the handful of independent prerequisite
+*strands* it depends on (e.g. for "differential forms": vector calculus,
+linear algebra, multivariable integration). For each strand, ask
+calibration checks via the `AskUserQuestion` tool, walking from a basic
+question toward a more advanced one on that same strand — binary-search
+style:
+
+1. Ask a basic question on the strand.
+2. If answered correctly, ask a more advanced question on the same
+   strand.
+3. If answered incorrectly (or "I don't know"), stop climbing that
+   strand: everything below the failed question counts as `known`,
+   the failed question and beyond count as `unknown`.
+4. Move to the next independent strand and repeat, starting that strand
+   at its own basic level (strands are independent — a failure on one
+   doesn't imply anything about another).
+
+Stop probing a strand once you've localized the boundary; stop probing
+altogether once every strand you identified has been covered. Record
+each concept touched in the Understanding Map with status `known` /
+`partial` / `unknown` and `established_via: calibration`.
+
+Exception: if an answer is a close borderline case you're not confident
+about, you may follow up with **one** applied check (see section 4) on
+that specific concept to confirm it before recording its status. Do this
+rarely — Probe should stay fast.
+
+## 3. Plan — curriculum + fact-check + dependency graph
+
+1. Using the Understanding Map, reason out the ordered list of concepts
+   the user needs between their current understanding and the topic they
+   asked for. Note any external, factual, or version-specific claims
+   this curriculum relies on (e.g. specific API behavior, historical
+   facts, current best practices).
+2. If there are factual claims to verify, spawn a research sub-agent via
+   the `Agent` tool with a prompt listing exactly those claims and asking
+   it to verify each one using `WebSearch`/`WebFetch` and report back
+   which are confirmed, which are wrong (with the correction), and which
+   it could not verify.
+3. Incorporate any corrections. For claims the sub-agent could not
+   verify, keep them in the plan but mark them `⚠ unverified` — do not
+   block the plan on this.
+4. Render the curriculum as a Mermaid `graph TD` dependency graph, one
+   node per concept, edges pointing from prerequisite to dependent
+   concept. This graph is not just for the user — reasoning it out
+   explicitly is what keeps the curriculum honest instead of improvised.
+5. Write the working note (see Working Note Format) with the Understanding
+   Map and this Plan filled in, `status: teaching`, and `progress_node`
+   set to the first node with no unmet prerequisites.
+6. Tell the user the plan is ready and show the Mermaid graph, then begin
+   Teach.
+
+## 4. Teach — one node at a time
+
+For the current `progress_node`:
+
+1. Explain the concept in prose, building on what the Understanding Map
+   says the user already knows. One reasoning step at a time — do not
+   rush through multiple nodes in one message.
+2. If the concept benefits from a diagram (spatial/geometric relationships,
+   a process with distinct stages, anything hard to hold in words alone),
+   spawn a visualization sub-agent via `Agent`:
+   - It writes an SVG file into the working note's asset folder
+     (`<Topic>/assets/<node-id>.svg`).
+   - It runs `<plugin root>/scripts/svg-check.sh <svg path> <png path>`
+     and views the resulting PNG with the `Read` tool.
+   - If the image doesn't match intent, it edits the SVG and re-checks.
+     Allow at most one retry beyond the first check (2 attempts total)
+     before giving up on this visual (see Error Handling).
+   - On success, embed the PNG in the working note under this node's
+     session-log entry.
+3. Run an **applied check** (not a calibration check) on this node: pose
+   a scenario or thought experiment that requires applying the concept
+   just explained, solvable entirely by reasoning (no external tool or
+   environment required). Ask the user to answer in plain text,
+   including their reasoning, not via `AskUserQuestion` — a reasoning
+   trace doesn't fit into 2-4 options.
+4. Evaluate the reply: judge the conclusion AND the reasoning
+   separately. Note explicitly if the conclusion is right but a step was
+   wrong (right-answer-wrong-reason), or the reverse. Update the
+   Understanding Map entry for this concept with
+   `established_via: applied` and, if there was a misconception, a short
+   note of exactly what it was.
+5. Append a Session Log entry for this node (see format below), then
+   update `progress_node` to the next node whose prerequisites are now
+   satisfied, and write the note to disk. Do this after every single
+   node — never batch multiple nodes before saving — so the session can
+   be interrupted and resumed at any point.
+6. If the node just completed was the last one in the graph, set
+   `status: done` and tell the user; otherwise continue to the next
+   node without waiting to be asked, unless the user has questions about
+   what was just taught (always pause for those).
+
+## Working Note Format
+
+```markdown
+---
+type: socrates-session
+topic: <Topic>
+status: probing | planning | teaching | done
+progress_node: <node-id-or-null>
+updated: YYYY-MM-DD
+---
+
+## Understanding Map
+
+| Concept | Status | Established via | Notes |
+|---|---|---|---|
+| <concept> | known / partial / unknown | calibration / applied | <misconception, if any> |
+
+## Plan
+
+```mermaid
+graph TD
+  a[<concept a>] --> b[<concept b>]
+```
+
+## Session Log
+
+### <node-id>: <node title>
+
+<explanation given>
+
+<embedded visual, if any>
+
+**Applied check:** <question asked>
+**Answer:** <user's reasoning and conclusion>
+**Evaluation:** <correct/incorrect on conclusion; correct/incorrect on reasoning; misconception noted if any>
+```
+
+## Error Handling
+
+- Research sub-agent fails, times out, or can't verify a claim: keep
+  going, mark the claim `⚠ unverified` in the Plan section instead of
+  blocking.
+- Visualization sub-agent fails twice (initial attempt + one retry) or
+  `svg-check.sh` reports `rsvg-convert` is missing: skip the visual,
+  write `[visual skipped]` in the session log entry, and continue with
+  the text explanation.
+- `resolve-config.sh` reports `source: "none"`: warn once per session,
+  use `./socrates-notes/`, do not repeat the warning on later nodes.
