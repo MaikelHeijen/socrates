@@ -44,6 +44,24 @@ If you want sessions saved into an Obsidian vault, create
 created, one subfolder per topic. Without this file, Socrates uses
 `./socrates-notes/` in the current directory instead.
 
+## Avoiding permission prompts (optional)
+
+Socrates' helper scripts (`resolve-config.sh`, `svg-check.sh`) run through
+Claude Code's Bash tool, so depending on your permission mode you may be
+asked to approve them the first time they run. To pre-approve them, add
+this to your `.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(resolve-config.sh *)",
+      "Bash(svg-check.sh *)"
+    ]
+  }
+}
+```
+
 ## Use
 
 ```

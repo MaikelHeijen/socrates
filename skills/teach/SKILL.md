@@ -17,19 +17,33 @@ this skill loaded tells you `<plugin root>/skills/teach`; the scripts are
 at `../../scripts/resolve-config.sh` and `../../scripts/svg-check.sh`
 relative to that path.
 
-Run, with the user's current working directory as the argument:
+Run, with the user's current working directory as the argument — substitute
+the actual absolute path as a literal string; do not leave it as the shell
+variable `$PWD`. A command containing shell variable syntax is more likely
+to be blocked outright by the sandbox's static-safety check ("cannot be
+statically analyzed") than a plain literal path, so resolve the path
+yourself first and write it in:
 
 ```bash
-<plugin root>/scripts/resolve-config.sh "$PWD"
+<plugin root>/scripts/resolve-config.sh /actual/absolute/path/here
 ```
 
 This returns JSON: `{"vault": "<path>"|null, "notesRoot": "<string>", "source": "config"|"none"}`.
 
 - If `source` is `"config"`: the working note root is `<vault>/<notesRoot>/`.
 - If `source` is `"none"`: warn the user once ("No socrates.config.json found — using ./socrates-notes/ instead."), then use `./socrates-notes/` as the working note root, creating it if needed.
+- If the command itself fails to produce that JSON at all (permission denied, no output, a crash, or anything that isn't valid JSON with a `source` field) — this is different from it succeeding and reporting `source: "none"` — tell the user specifically that `resolve-config.sh` could not run (most likely a pending or declined permission prompt for this script), not that no config file was found, then fall back to `./socrates-notes/` the same way.
 
-The working note for a topic lives at `<working note root>/<Topic>/<Topic>.md`
-(spaces in the topic name become the literal folder/file name; do not slugify).
+The working note for a topic lives at `<working note root>/<Topic>/<Topic>.md`,
+where `<Topic>` is the **exact, verbatim topic argument** the user typed after
+`/socrates:teach` — character for character, no paraphrasing, shortening,
+expanding, or rewording it, even if you would naturally summarize it
+differently elsewhere in prose. Spaces become literal spaces in the
+folder/file name; do not slugify. Before creating a new note, list the
+working note root directory and check whether a folder already exists there
+that matches the topic case-insensitively, even if not byte-identical — if
+one does, treat it as the existing note for this topic (see Resume) instead
+of creating a second, orphaned one.
 
 ## 1. Resume check
 
