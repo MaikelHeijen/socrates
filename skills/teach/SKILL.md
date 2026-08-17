@@ -101,13 +101,20 @@ For the topic, identify the handful of independent prerequisite
 *strands* it depends on (e.g. for "differential forms": vector calculus,
 linear algebra, multivariable integration). For each strand, ask
 calibration checks via the `AskUserQuestion` tool, walking from a basic
-question toward a more advanced one on that same strand. **Randomize which
-option holds the correct answer for every question — never default to
-listing it first.** `AskUserQuestion`'s own convention of putting a
-recommended option first is for preference decisions; a calibration check
-has no "recommended" option, it has a correct one, and a predictable
-position turns the check into a position-guessing exercise instead of a
-measure of understanding. Do not add "(Recommended)" to any option here.
+question toward a more advanced one on that same strand.
+
+**Before building each question's options, get a real random number —
+do not just "decide" a position yourself.** Run
+`bash -c 'echo $((RANDOM % 4))'` and use the result (0-3) as the index of
+the option that holds the correct answer. Deciding the position by your
+own judgment reliably produces the same pattern every time (you generate
+the correct answer first, as the "obvious" content, then place it) —
+that is not randomization, it is a predictable habit, and it turns the
+check into a position-guessing exercise instead of a measure of
+understanding. `AskUserQuestion`'s own convention of putting a
+recommended option first is for preference decisions; a calibration
+check has no "recommended" option, it has a correct one. Do not add
+"(Recommended)" to any option here.
 
 1. Ask a basic question on the strand.
 2. If answered correctly, ask a more advanced question on the same
