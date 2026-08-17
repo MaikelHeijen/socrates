@@ -12,7 +12,7 @@
 
 A Socratic AI tutor built on Claude Code. It probes what you already
 know about a topic, plans a fact-checked curriculum, then teaches it to
-you one reasoning step at a time — with applied-reasoning checks instead
+you one reasoning step at a time, with applied-reasoning checks instead
 of plain quizzes, and diagrams that a sub-agent draws and visually
 checks itself before showing you.
 
@@ -82,9 +82,9 @@ created, one subfolder per topic. Without this file, Socrates uses
 
 Where you put this file decides its scope:
 
-- **`socrates.config.json` in the directory you run Claude Code from** —
+- **`socrates.config.json` in the directory you run Claude Code from**:
   applies only there, useful if you keep separate vaults per project.
-- **`~/socrates.config.json`** (your home directory) — applies everywhere,
+- **`~/socrates.config.json`** (your home directory): applies everywhere,
   regardless of which directory you start Claude Code from. A
   directory-local config, if present, always overrides this global one.
 
@@ -109,7 +109,7 @@ don't have one yet):
 ```
 
 Replace `<you>` with your username (on Linux, use `/home/<you>/...` instead
-of `/Users/<you>/...`). Use the **full, absolute path** — `~` does not get
+of `/Users/<you>/...`). Use the **full, absolute path**: `~` does not get
 expanded inside a permission pattern, so a pattern starting with `~` silently
 never matches and the prompt keeps appearing. The `*` before `/scripts/...`
 matches the installed version segment, so this survives plugin updates. If
@@ -117,7 +117,7 @@ you're developing locally with `--plugin-dir`, substitute that directory's
 absolute path instead.
 
 A broader pattern like `Bash(*resolve-config.sh*)` also technically works,
-but it's a substring match over the *entire* command string — it will also
+but it's a substring match over the *entire* command string, so it will also
 auto-approve any unrelated command that merely contains that text somewhere
 (including as a trailing comment), which is a real risk, not a theoretical
 one. Prefer the path-anchored form above.
@@ -130,18 +130,18 @@ one. Prefer the path-anchored form above.
 
 What happens:
 
-1. **Probe** — a handful of quick multiple-choice questions to find out
+1. **Probe**: a handful of quick multiple-choice questions to find out
    what you already know, and where your understanding runs out.
-2. **Plan** — Socrates works out the curriculum needed to get from there
+2. **Plan**: Socrates works out the curriculum needed to get from there
    to your goal, checks any factual claims it depends on against the
    web, and shows you the plan as a dependency graph before teaching
    anything.
-3. **Teach** — one concept at a time, with an occasional diagram and a
+3. **Teach**: one concept at a time, with an occasional diagram and a
    short scenario question after each step to check you actually
    understood it (not just recognized the right multiple-choice answer).
 
 Sessions are saved as you go, so you can stop at any point and resume
-later by running the same command again — Socrates picks up where you
+later by running the same command again: Socrates picks up where you
 left off.
 
 Learning more than one thing? Run `/socrates:teach` with no topic and
@@ -150,12 +150,12 @@ having to remember and retype the exact topic string.
 
 ## How it's built
 
-- `skills/teach/SKILL.md` — the orchestration instructions.
-- `scripts/resolve-config.sh` — finds your `socrates.config.json`,
+- `skills/teach/SKILL.md`: the orchestration instructions.
+- `scripts/resolve-config.sh`: finds your `socrates.config.json`,
   local or global (see Configure above).
-- `scripts/svg-check.sh` — renders a diagram and hands it back so a
+- `scripts/svg-check.sh`: renders a diagram and hands it back so a
   sub-agent can look at what it drew.
-- `hooks/socrates-banner.sh` — a startup banner, shown only in a
+- `hooks/socrates-banner.sh`: a startup banner, shown only in a
   directory with a *local* `socrates.config.json` or `socrates-notes/`
   folder. Deliberately doesn't count a global config: it fires before
   you've typed anything, so it can't know you're about to run
