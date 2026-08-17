@@ -51,7 +51,16 @@ where `<Topic>` is the **exact, verbatim topic argument** the user typed after
 `/socrates:teach` — character for character, no paraphrasing, shortening,
 expanding, or rewording it, even if you would naturally summarize it
 differently elsewhere in prose. Spaces become literal spaces in the
-folder/file name; do not slugify. Before creating a new note, use the `Glob`
+folder/file name; do not slugify. The one exception is characters that
+cannot appear in a file name: in the folder and file name only, replace
+`/` and `\` with `-` (e.g. "TCP/IP basics" becomes the folder and file
+"TCP-IP basics"). Apply the same replacement when looking up an existing
+note, so resume finds the file that was actually written. The
+frontmatter `topic:` field keeps the original topic fully verbatim,
+wrapped in double quotes so a `:` or other YAML-significant character
+inside it cannot break the frontmatter.
+
+Before creating a new note, use the `Glob`
 tool to list the working note root directory (if it doesn't exist yet, there
 is nothing to match — skip straight to creating the note) and check whether a
 folder already exists there that matches the topic case-insensitively, even
@@ -71,11 +80,12 @@ config changes.
 - **None exist anywhere**: ask what topic they'd like to start, then
   proceed to Probe as normal once they answer.
 - **One or more exist**: read each one's frontmatter (`topic`, `status`,
-  `progress_node`) and present them via `AskUserQuestion` — one option per
-  existing topic, labeled with the topic name plus a short status hint
-  (e.g. "Differential forms — teaching, node: wedge-products" or
-  "Git branching — done"), plus one further option to start a brand new
-  topic. If they pick an existing topic, resume it at the **actual file
+  `progress_node`) and present them via `AskUserQuestion`, with one option
+  per existing topic plus one further option to start a brand new topic.
+  Keep each option's label short (the topic name, trimmed if it runs
+  long) and put the status hint in the option's *description* instead
+  (e.g. label "Differential forms", description "teaching, at node:
+  wedge-products"), since labels are meant to stay a few words long. If they pick an existing topic, resume it at the **actual file
   path you found it at** — not by reconstructing
   `<working note root>/<Topic>/<Topic>.md` from the current default root,
   since a topic found under `./socrates-notes/` may not live under the
@@ -125,15 +135,25 @@ linear algebra, multivariable integration). For each strand, ask
 calibration checks via the `AskUserQuestion` tool, walking from a basic
 question toward a more advanced one on that same strand.
 
-**Before building each question's options, get a real random number —
-do not just "decide" a position yourself.** Run
-`bash -c 'echo $((RANDOM % 4))'` and use the result (0-3) as the index of
-the option that holds the correct answer. Deciding the position by your
-own judgment reliably produces the same pattern every time (you generate
-the correct answer first, as the "obvious" content, then place it) —
-that is not randomization, it is a predictable habit, and it turns the
-check into a position-guessing exercise instead of a measure of
-understanding. `AskUserQuestion`'s own convention of putting a
+**Before building each question's options, use a real random draw for
+the correct answer's position. Do not just "decide" a position
+yourself.** Once per session, before the first calibration question, run:
+
+```bash
+od -An -N16 -tu1 /dev/urandom
+```
+
+This prints 16 random bytes. Take each byte modulo 4 to get a queue of
+positions (0-3); consume them in order, one per question, using the next
+one as the index of the option that holds the correct answer. Run the
+command again if the queue runs out. This form is deliberate: it
+contains no shell variable syntax for the sandbox's static-safety check
+to block (see section 0), and it avoids one Bash round-trip per
+question. Deciding positions by your own judgment reliably produces
+the same pattern every time (you generate the correct answer first, as
+the "obvious" content, then place it): that is not randomization, it is
+a predictable habit, and it turns the check into a position-guessing
+exercise instead of a measure of understanding. `AskUserQuestion`'s own convention of putting a
 recommended option first is for preference decisions; a calibration
 check has no "recommended" option, it has a correct one. Do not add
 "(Recommended)" to any option here.
@@ -246,7 +266,7 @@ For the current `progress_node`:
 ````markdown
 ---
 type: socrates-session
-topic: <Topic>
+topic: "<Topic, verbatim, always double-quoted>"
 status: probing | planning | teaching | done
 progress_node: <node-id-or-null>
 ---
