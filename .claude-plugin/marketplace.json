@@ -1,0 +1,13 @@
+{
+  "name": "socrates",
+  "owner": {
+    "name": "Maikel Heijen"
+  },
+  "plugins": [
+    {
+      "name": "socrates",
+      "source": "./",
+      "description": "A Socratic AI tutor for Claude Code."
+    }
+  ]
+}

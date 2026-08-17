@@ -1,0 +1,12 @@
+{
+  "name": "socrates",
+  "displayName": "Socrates",
+  "version": "0.1.0",
+  "description": "A Socratic AI tutor for Claude Code: adaptive knowledge probing, fact-checked lesson planning, and step-by-step teaching with self-checked visuals.",
+  "author": {
+    "name": "Maikel Heijen"
+  },
+  "license": "MIT",
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json"
+}
