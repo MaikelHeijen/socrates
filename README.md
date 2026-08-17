@@ -109,12 +109,16 @@ don't have one yet):
 ```
 
 Replace `<you>` with your username (on Linux, use `/home/<you>/...` instead
-of `/Users/<you>/...`). Use the **full, absolute path**: `~` does not get
-expanded inside a permission pattern, so a pattern starting with `~` silently
-never matches and the prompt keeps appearing. The `*` before `/scripts/...`
-matches the installed version segment, so this survives plugin updates. If
-you're developing locally with `--plugin-dir`, substitute that directory's
-absolute path instead.
+of `/Users/<you>/...`). Use the **full, absolute path**: `~` expansion inside
+Bash permission patterns is not documented behavior, so a pattern starting
+with `~` may silently never match while the prompt keeps appearing. The `*`
+before `/scripts/...` matches the installed version segment, so this survives
+plugin updates. The cache layout itself (`~/.claude/plugins/cache/...`) is
+not formally documented either and could change between Claude Code versions;
+if the prompt keeps appearing, read the exact script path out of the
+permission prompt and adjust the pattern to match it. If you're developing
+locally with `--plugin-dir`, substitute that directory's absolute path
+instead.
 
 A broader pattern like `Bash(*resolve-config.sh*)` also technically works,
 but it's a substring match over the *entire* command string, so it will also
