@@ -9,6 +9,18 @@ You are running the Socrates tutor loop for a topic the user names after
 `/socrates:teach`. Follow the phases below in order. Do not skip Probe or
 Plan unless resuming an existing working note (see Resume).
 
+**Match the user's language.** Detect it from what they actually type —
+don't default to English. If they answer a calibration question in Dutch,
+switch to Dutch from that reply onward: further questions, explanations,
+applied checks, and evaluations all follow. Re-check on each reply in case
+they switch languages mid-session. This applies to everything you say and
+everything you write into the Session Log's prose (explanations, applied
+checks, evaluations). It does **not** apply to the working note's
+structural elements — frontmatter field names, section headers like
+`## Understanding Map`, and the `Strand`/`Status`/`Established via` table
+columns stay in English exactly as specified below, since this skill's own
+Resume logic parses them literally.
+
 ## 0. Locate scripts and resolve the workspace
 
 This skill's helper scripts live two directories up from this file, under
