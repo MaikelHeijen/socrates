@@ -1,0 +1,14 @@
+{
+  "SessionStart": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/socrates-banner.sh",
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}
