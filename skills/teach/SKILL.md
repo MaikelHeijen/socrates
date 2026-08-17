@@ -39,11 +39,14 @@ where `<Topic>` is the **exact, verbatim topic argument** the user typed after
 `/socrates:teach` — character for character, no paraphrasing, shortening,
 expanding, or rewording it, even if you would naturally summarize it
 differently elsewhere in prose. Spaces become literal spaces in the
-folder/file name; do not slugify. Before creating a new note, list the
-working note root directory and check whether a folder already exists there
-that matches the topic case-insensitively, even if not byte-identical — if
-one does, treat it as the existing note for this topic (see Resume) instead
-of creating a second, orphaned one.
+folder/file name; do not slugify. Before creating a new note, use the `Glob`
+tool to list the working note root directory (if it doesn't exist yet, there
+is nothing to match — skip straight to creating the note) and check whether a
+folder already exists there that matches the topic case-insensitively, even
+if not byte-identical. If one does, that folder's *existing* casing wins for
+the rest of the session — use its exact casing for both the folder and the
+`.md` filename (not the freshly-typed argument's casing) when reading or
+writing it, so the file you look for is the file that's actually there.
 
 ## 1. Resume check
 
@@ -219,3 +222,8 @@ graph TD
   the text explanation.
 - `resolve-config.sh` reports `source: "none"`: warn once per session,
   use `./socrates-notes/`, do not repeat the warning on later nodes.
+- `resolve-config.sh` fails to run at all (permission denied, crash, no
+  valid JSON output) rather than running and reporting `source: "none"`:
+  tell the user specifically that the script could not run (likely a
+  pending or declined permission prompt), not that no config was found,
+  then fall back to `./socrates-notes/` the same way.

@@ -47,20 +47,26 @@ created, one subfolder per topic. Without this file, Socrates uses
 ## Avoiding permission prompts (optional)
 
 Socrates' helper scripts (`resolve-config.sh`, `svg-check.sh`) run through
-Claude Code's Bash tool, so depending on your permission mode you may be
-asked to approve them the first time they run. To pre-approve them, add
-this to your `.claude/settings.json`:
+Claude Code's Bash tool by their full installed path, which varies by how you
+installed the plugin — so a plain basename pattern won't match. To
+pre-approve them regardless of install location, merge these two entries
+into the `permissions.allow` array in your `~/.claude/settings.json` (create
+the file with this content if you don't have one yet):
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Bash(resolve-config.sh *)",
-      "Bash(svg-check.sh *)"
+      "Bash(*resolve-config.sh*)",
+      "Bash(*svg-check.sh*)"
     ]
   }
 }
 ```
+
+The leading `*` matches whatever install path prefix comes before the
+script name, since `${CLAUDE_PLUGIN_ROOT}` itself can't be used inside a
+permission pattern.
 
 ## Use
 
