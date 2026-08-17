@@ -20,19 +20,27 @@ cat > "$TMP/withconfig/socrates.config.json" <<'EOF'
 {"vault": "/tmp/vault", "notesRoot": "Resources"}
 EOF
 OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/withconfig" | "$BANNER")
-if ! echo "$OUTPUT" | grep -q "socrates v"; then
-  echo "FAIL: expected banner with version, got: $OUTPUT"
+if ! echo "$OUTPUT" | jq empty 2>/dev/null; then
+  echo "FAIL: expected valid JSON, got: $OUTPUT"
   exit 1
 fi
-echo "PASS: banner shown when socrates.config.json present"
+if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
+  echo "FAIL: expected banner with version in systemMessage, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: banner shown when socrates.config.json present (valid JSON with systemMessage)"
 
 # Case 3: fallback socrates-notes/ folder present -> banner shown
 mkdir -p "$TMP/withnotes/socrates-notes"
 OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/withnotes" | "$BANNER")
-if ! echo "$OUTPUT" | grep -q "socrates v"; then
-  echo "FAIL: expected banner with version, got: $OUTPUT"
+if ! echo "$OUTPUT" | jq empty 2>/dev/null; then
+  echo "FAIL: expected valid JSON, got: $OUTPUT"
   exit 1
 fi
-echo "PASS: banner shown when socrates-notes/ already exists"
+if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
+  echo "FAIL: expected banner with version in systemMessage, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: banner shown when socrates-notes/ already exists (valid JSON with systemMessage)"
 
 echo "ALL TESTS PASSED"

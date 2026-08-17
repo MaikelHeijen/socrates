@@ -23,20 +23,23 @@ fi
 
 VERSION=$(jq -r '.version // "0.0.0"' "$PLUGIN_ROOT/.claude-plugin/plugin.json")
 
-cat <<BANNER
+# Build banner text with ANSI styling (bold cyan)
+BOLD_CYAN=$(printf '\033[1m\033[36m')
+RESET=$(printf '\033[0m')
 
-   ██████████████████
- ██████████████████████
-   ██  ██  ██  ██  ██
-   ██  ██  ██  ██  ██
-   ██  ██  ██  ██  ██
- ██████████████████████
-   ██████████████████
+# Build banner as simple string concatenation to avoid here-doc indentation issues
+BANNER_TEXT="${BOLD_CYAN}"$'\n'
+BANNER_TEXT+="   ██████████████████"$'\n'
+BANNER_TEXT+=" ██████████████████████"$'\n'
+BANNER_TEXT+="   ██  ██  ██  ██  ██"$'\n'
+BANNER_TEXT+="   ██  ██  ██  ██  ██"$'\n'
+BANNER_TEXT+="   ██  ██  ██  ██  ██"$'\n'
+BANNER_TEXT+=" ██████████████████████"$'\n'
+BANNER_TEXT+="   ██████████████████"$'\n'
+BANNER_TEXT+=$'\n'"socrates v$VERSION${RESET}"$'\n'
+BANNER_TEXT+=$'\n'"[Skills]"$'\n'
+BANNER_TEXT+="  teach"$'\n'
+BANNER_TEXT+=$'\n'"Linked: $CWD"
 
-socrates v$VERSION
-
-[Skills]
-  teach
-
-Linked: $CWD
-BANNER
+# Output as compact JSON with systemMessage
+jq -nc --arg msg "$BANNER_TEXT" '{systemMessage: $msg}'
