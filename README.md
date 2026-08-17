@@ -1,10 +1,23 @@
 # Socrates
 
+```
+   ██████████████████
+ ██████████████████████
+   ██  ██  ██  ██  ██
+   ██  ██  ██  ██  ██
+   ██  ██  ██  ██  ██
+ ██████████████████████
+   ██████████████████
+```
+
 A Socratic AI tutor built on Claude Code. It probes what you already
 know about a topic, plans a fact-checked curriculum, then teaches it to
 you one reasoning step at a time — with applied-reasoning checks instead
 of plain quizzes, and diagrams that a sub-agent draws and visually
 checks itself before showing you.
+
+Inspired by a video exploring adaptive, AI-driven personalized tutoring,
+rebuilt to run entirely on Claude Code.
 
 ## Prerequisites
 
