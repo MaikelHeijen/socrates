@@ -58,8 +58,7 @@ Please help me diagnose it:
 ## Configure (optional)
 
 If you want sessions saved into an Obsidian vault, create
-`socrates.config.json` in the directory you'll run Claude Code from
-(copy `socrates.config.json.example`):
+`socrates.config.json` (copy `socrates.config.json.example`):
 
 ```json
 {
@@ -71,6 +70,14 @@ If you want sessions saved into an Obsidian vault, create
 `notesRoot` is the folder inside your vault where topic notes are
 created, one subfolder per topic. Without this file, Socrates uses
 `./socrates-notes/` in the current directory instead.
+
+Where you put this file decides its scope:
+
+- **`socrates.config.json` in the directory you run Claude Code from** —
+  applies only there, useful if you keep separate vaults per project.
+- **`~/socrates.config.json`** (your home directory) — applies everywhere,
+  regardless of which directory you start Claude Code from. A
+  directory-local config, if present, always overrides this global one.
 
 ## Avoiding permission prompts (optional)
 
@@ -128,14 +135,20 @@ Sessions are saved as you go, so you can stop at any point and resume
 later by running the same command again — Socrates picks up where you
 left off.
 
+Learning more than one thing? Run `/socrates:teach` with no topic and
+it'll list what's already in progress so you can pick one, instead of
+having to remember and retype the exact topic string.
+
 ## How it's built
 
 - `skills/teach/SKILL.md` — the orchestration instructions.
-- `scripts/resolve-config.sh` — finds your `socrates.config.json`.
+- `scripts/resolve-config.sh` — finds your `socrates.config.json`,
+  local or global (see Configure above).
 - `scripts/svg-check.sh` — renders a diagram and hands it back so a
   sub-agent can look at what it drew.
-- `hooks/socrates-banner.sh` — a startup banner, shown only inside a
-  directory that's an active Socrates workspace.
+- `hooks/socrates-banner.sh` — a startup banner, shown in any directory
+  that resolves to an active Socrates workspace (which is every
+  directory, once you've set up a global `~/socrates.config.json`).
 
 ## License
 

@@ -1,6 +1,6 @@
 ---
 name: teach
-description: Adaptive Socratic tutor. Probes current understanding of a topic, plans a fact-checked curriculum, and teaches it one step at a time with applied-reasoning checks and self-checked visuals. Use for "/socrates:teach <topic>".
+description: Adaptive Socratic tutor. Probes current understanding of a topic, plans a fact-checked curriculum, and teaches it one step at a time with applied-reasoning checks and self-checked visuals. Use for "/socrates:teach <topic>", or "/socrates:teach" with no topic to pick from topics already in progress.
 ---
 
 # Teach
@@ -47,6 +47,21 @@ if not byte-identical. If one does, that folder's *existing* casing wins for
 the rest of the session — use its exact casing for both the folder and the
 `.md` filename (not the freshly-typed argument's casing) when reading or
 writing it, so the file you look for is the file that's actually there.
+
+If the user ran `/socrates:teach` with **no topic argument**: use `Glob` to
+list every `<Topic>/<Topic>.md` file directly under the working note root.
+
+- **None exist**: ask what topic they'd like to start, then proceed to
+  Probe as normal once they answer.
+- **One or more exist**: read each one's frontmatter (`topic`, `status`,
+  `progress_node`) and present them via `AskUserQuestion` — one option per
+  existing topic, labeled with the topic name plus a short status hint
+  (e.g. "Differential forms — teaching, node: wedge-products" or
+  "Git branching — done"), plus one further option to start a brand new
+  topic. If they pick an existing topic, treat it exactly as if they had
+  typed that topic verbatim after `/socrates:teach` and continue at the
+  Resume check below. If they pick "start a new topic," ask what it is,
+  then proceed to Probe as normal.
 
 ## 1. Resume check
 
