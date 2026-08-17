@@ -6,10 +6,6 @@ you one reasoning step at a time — with applied-reasoning checks instead
 of plain quizzes, and diagrams that a sub-agent draws and visually
 checks itself before showing you.
 
-Inspired by ["How I Use AI to Learn Things" (Eero Alvar)](https://www.youtube.com/watch?v=kzcI5F4tGiU),
-rebuilt to run entirely on Claude Code — no separate paid model or API
-needed.
-
 ## Prerequisites
 
 - [Claude Code](https://claude.com/claude-code)
