@@ -63,10 +63,10 @@ rm -f "$TMP/socrates.config.json"
 FAKE_BIN="$TMP/fakebin"
 mkdir -p "$FAKE_BIN"
 set +e
-OUTPUT=$(env HOME="$ISOLATED_HOME" PATH="$FAKE_BIN" "$RESOLVE" "$TMP" 2>/tmp/resolve-nojq-err.$$)
+OUTPUT=$(env HOME="$ISOLATED_HOME" PATH="$FAKE_BIN" "$RESOLVE" "$TMP" 2>"$TMP/resolve-nojq-err")
 STATUS=$?
 set -e
-ERR=$(cat /tmp/resolve-nojq-err.$$); rm -f /tmp/resolve-nojq-err.$$
+ERR=$(cat "$TMP/resolve-nojq-err")
 if [ "$STATUS" -eq 0 ]; then
   echo "FAIL: expected non-zero exit when jq is missing, got 0"
   exit 1
@@ -85,10 +85,10 @@ echo "PASS: fails clearly (not silently) when jq is missing"
 mkdir -p "$TMP/malformed"
 printf '{"vault": broken' > "$TMP/malformed/socrates.config.json"
 set +e
-OUTPUT=$(env HOME="$ISOLATED_HOME" "$RESOLVE" "$TMP/malformed" 2>/tmp/resolve-malformed-err.$$)
+OUTPUT=$(env HOME="$ISOLATED_HOME" "$RESOLVE" "$TMP/malformed" 2>"$TMP/resolve-malformed-err")
 STATUS=$?
 set -e
-ERR=$(cat /tmp/resolve-malformed-err.$$); rm -f /tmp/resolve-malformed-err.$$
+ERR=$(cat "$TMP/resolve-malformed-err")
 if [ "$STATUS" -eq 0 ]; then
   echo "FAIL: expected non-zero exit for malformed config, got 0"
   exit 1
@@ -128,5 +128,29 @@ if [ "$(echo "$OUTPUT" | jq -c -S .)" != "$(echo "$EXPECTED" | jq -c -S .)" ]; t
   exit 1
 fi
 echo "PASS: local config takes precedence over global"
+
+# Case 8: local config WITHOUT a vault + global config with one -> the
+# incomplete local config must not shadow the working global one
+NOVAULT="$TMP/novault"
+mkdir -p "$NOVAULT"
+cat > "$NOVAULT/socrates.config.json" <<'EOF'
+{"notesRoot": "LocalNotes"}
+EOF
+OUTPUT=$(env HOME="$FAKE_HOME" "$RESOLVE" "$NOVAULT")
+EXPECTED='{"vault": "/Users/test/global-vault", "notesRoot": "GlobalNotes", "source": "config"}'
+if [ "$(echo "$OUTPUT" | jq -c -S .)" != "$(echo "$EXPECTED" | jq -c -S .)" ]; then
+  echo "FAIL: expected vault-less local config to fall through to global, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: vault-less local config falls through to global instead of shadowing it"
+
+# Case 9: local config without a vault and no global -> plain fallback
+OUTPUT=$(env HOME="$ISOLATED_HOME" "$RESOLVE" "$NOVAULT")
+EXPECTED='{"vault": null, "notesRoot": "socrates-notes", "source": "none"}'
+if [ "$(echo "$OUTPUT" | jq -c -S .)" != "$(echo "$EXPECTED" | jq -c -S .)" ]; then
+  echo "FAIL: expected fallback for vault-less config with no global, got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: vault-less config with no global falls back to socrates-notes"
 
 echo "ALL TESTS PASSED"
