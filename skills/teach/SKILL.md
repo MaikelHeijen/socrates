@@ -36,11 +36,23 @@ The working note for a topic lives at `<working note root>/<Topic>/<Topic>.md`
 Before starting Probe, check whether `<Topic>.md` already exists at that
 path.
 
-- **Exists**: read its frontmatter and the Understanding Map and Session
-  Log sections (see Working Note Format below). Skip Probe and Plan.
+- **Does not exist**: create it immediately with `status: probing`, an
+  empty Understanding Map, no Plan section yet, and `progress_node: null`.
+  Then proceed to Probe.
+- **Exists with `status: probing`**: read the existing Understanding Map.
+  Resume Probe on the strands not yet covered (skip strands already
+  present in the Understanding Map). Tell the user in one sentence that
+  you're resuming the calibration phase.
+- **Exists with `status: planning`**: the Understanding Map is complete
+  but Plan didn't finish (e.g. interrupted during fact-checking). Resume
+  Plan from the existing Understanding Map — re-running Plan's reasoning
+  from scratch is fine, since Plan produces no user-facing questions.
+- **Exists with `status: teaching`**: read the Understanding Map, Plan,
+  and Session Log (see Working Note Format below). Skip Probe and Plan.
   Resume Teach at the node named in `progress_node`. Tell the user in one
   sentence what you're resuming and from where.
-- **Does not exist**: proceed to Probe.
+- **Exists with `status: done`**: tell the user this topic is already
+  complete and ask if they want to review it or start a related topic.
 
 ## 2. Probe — calibration checks
 
@@ -50,8 +62,7 @@ For the topic, identify the handful of independent prerequisite
 *strands* it depends on (e.g. for "differential forms": vector calculus,
 linear algebra, multivariable integration). For each strand, ask
 calibration checks via the `AskUserQuestion` tool, walking from a basic
-question toward a more advanced one on that same strand — binary-search
-style:
+question toward a more advanced one on that same strand:
 
 1. Ask a basic question on the strand.
 2. If answered correctly, ask a more advanced question on the same
@@ -64,14 +75,20 @@ style:
    doesn't imply anything about another).
 
 Stop probing a strand once you've localized the boundary; stop probing
-altogether once every strand you identified has been covered. Record
-each concept touched in the Understanding Map with status `known` /
-`partial` / `unknown` and `established_via: calibration`.
+altogether once every strand you identified has been covered. After each
+strand, append its concepts to the Understanding Map (status `known` /
+`unknown`, `established_via: calibration`) and write the note to disk
+before moving to the next strand, so an interruption mid-Probe only loses
+the strand in progress, not the whole phase. Probe alone only ever
+produces `known` or `unknown`; `partial` is reserved for applied checks
+(see the Exception below and section 4).
 
 Exception: if an answer is a close borderline case you're not confident
-about, you may follow up with **one** applied check (see section 4) on
-that specific concept to confirm it before recording its status. Do this
-rarely — Probe should stay fast.
+about, follow up with **one** applied check (see section 4) on that
+specific concept before recording its status: `known` if the applied
+check confirms it cleanly, `partial` if it reveals a right-answer-wrong-
+reason or wrong-answer-right-reasoning split, `unknown` if the reasoning
+was fundamentally wrong. Do this rarely — Probe should stay fast.
 
 ## 3. Plan — curriculum + fact-check + dependency graph
 
@@ -80,22 +97,22 @@ rarely — Probe should stay fast.
    asked for. Note any external, factual, or version-specific claims
    this curriculum relies on (e.g. specific API behavior, historical
    facts, current best practices).
-2. If there are factual claims to verify, spawn a research sub-agent via
+2. Update the working note's `status` to `planning`.
+3. If there are factual claims to verify, spawn a research sub-agent via
    the `Agent` tool with a prompt listing exactly those claims and asking
    it to verify each one using `WebSearch`/`WebFetch` and report back
    which are confirmed, which are wrong (with the correction), and which
    it could not verify.
-3. Incorporate any corrections. For claims the sub-agent could not
+4. Incorporate any corrections. For claims the sub-agent could not
    verify, keep them in the plan but mark them `⚠ unverified` — do not
    block the plan on this.
-4. Render the curriculum as a Mermaid `graph TD` dependency graph, one
+5. Render the curriculum as a Mermaid `graph TD` dependency graph, one
    node per concept, edges pointing from prerequisite to dependent
    concept. This graph is not just for the user — reasoning it out
    explicitly is what keeps the curriculum honest instead of improvised.
-5. Write the working note (see Working Note Format) with the Understanding
-   Map and this Plan filled in, `status: teaching`, and `progress_node`
-   set to the first node with no unmet prerequisites.
-6. Tell the user the plan is ready and show the Mermaid graph, then begin
+6. Update the working note with the Plan filled in, `status: teaching`,
+   and `progress_node` set to the first node with no unmet prerequisites.
+7. Tell the user the plan is ready and show the Mermaid graph, then begin
    Teach.
 
 ## 4. Teach — one node at a time
@@ -124,11 +141,12 @@ For the current `progress_node`:
    including their reasoning, not via `AskUserQuestion` — a reasoning
    trace doesn't fit into 2-4 options.
 4. Evaluate the reply: judge the conclusion AND the reasoning
-   separately. Note explicitly if the conclusion is right but a step was
-   wrong (right-answer-wrong-reason), or the reverse. Update the
-   Understanding Map entry for this concept with
-   `established_via: applied` and, if there was a misconception, a short
-   note of exactly what it was.
+   separately. Update the Understanding Map entry for this concept with
+   `established_via: applied` and status `known` if both the conclusion
+   and reasoning are correct, `partial` if there was a right-answer-
+   wrong-reason or wrong-answer-right-reasoning split, or `unknown` if
+   the reasoning was fundamentally wrong regardless of the conclusion. If
+   there was a misconception, add a short note of exactly what it was.
 5. Append a Session Log entry for this node (see format below), then
    update `progress_node` to the next node whose prerequisites are now
    satisfied, and write the note to disk. Do this after every single
@@ -141,7 +159,7 @@ For the current `progress_node`:
 
 ## Working Note Format
 
-```markdown
+````markdown
 ---
 type: socrates-session
 topic: <Topic>
@@ -174,7 +192,7 @@ graph TD
 **Applied check:** <question asked>
 **Answer:** <user's reasoning and conclusion>
 **Evaluation:** <correct/incorrect on conclusion; correct/incorrect on reasoning; misconception noted if any>
-```
+````
 
 ## Error Handling
 
