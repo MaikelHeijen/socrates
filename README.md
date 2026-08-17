@@ -29,6 +29,32 @@ needed.
 /plugin install socrates@socrates
 ```
 
+### If something goes wrong
+
+Paste this into Claude Code and it'll diagnose it for you:
+
+```
+I'm trying to install and use the Socrates plugin for Claude Code
+(https://github.com/MaikelHeijen/socrates) but something isn't working.
+Please help me diagnose it:
+
+1. Confirm the marketplace was added: run `/plugin marketplace list` and
+   check "socrates" is there.
+2. Confirm the plugin itself is installed, not just the marketplace: run
+   `/plugin list` and check "socrates" shows as installed. If it's only
+   in the marketplace list, run `/plugin install socrates@socrates`.
+3. Check the prerequisites are on PATH: run `which jq` and
+   `which rsvg-convert` in the terminal. If either is missing, tell me so
+   I can install it (jq: `brew install jq` / `apt install jq`;
+   rsvg-convert: `brew install librsvg` / `apt install librsvg2-bin`).
+4. Try `/socrates:teach test topic` and tell me exactly what happens.
+   "Unknown command" means step 2 above wasn't done yet; anything else,
+   show me the full output so I can see what's actually failing.
+5. If it starts but a permission prompt for `resolve-config.sh` or
+   `svg-check.sh` keeps interrupting things, check this repo's README
+   for its "Avoiding permission prompts" section.
+```
+
 ## Configure (optional)
 
 If you want sessions saved into an Obsidian vault, create

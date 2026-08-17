@@ -86,7 +86,13 @@ For the topic, identify the handful of independent prerequisite
 *strands* it depends on (e.g. for "differential forms": vector calculus,
 linear algebra, multivariable integration). For each strand, ask
 calibration checks via the `AskUserQuestion` tool, walking from a basic
-question toward a more advanced one on that same strand:
+question toward a more advanced one on that same strand. **Randomize which
+option holds the correct answer for every question — never default to
+listing it first.** `AskUserQuestion`'s own convention of putting a
+recommended option first is for preference decisions; a calibration check
+has no "recommended" option, it has a correct one, and a predictable
+position turns the check into a position-guessing exercise instead of a
+measure of understanding. Do not add "(Recommended)" to any option here.
 
 1. Ask a basic question on the strand.
 2. If answered correctly, ask a more advanced question on the same
