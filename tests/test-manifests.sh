@@ -73,4 +73,11 @@ if ! grep -q "^name: teach$" "$SKILL_FILE"; then
 fi
 echo "PASS: teach skill frontmatter declares its name"
 
+SKILL_FILE_GOAL="$ROOT/skills/goal/SKILL.md"
+if ! grep -q "^name: goal$" "$SKILL_FILE_GOAL"; then
+  echo "FAIL: skills/goal/SKILL.md must declare 'name: goal' in its frontmatter"
+  exit 1
+fi
+echo "PASS: goal skill frontmatter declares its name"
+
 echo "ALL TESTS PASSED"
