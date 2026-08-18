@@ -131,53 +131,64 @@ Goal: build an Understanding Map without teaching anything yet.
 
 For the topic, identify the handful of independent prerequisite
 *strands* it depends on (e.g. for "differential forms": vector calculus,
-linear algebra, multivariable integration). For each strand, ask
-calibration checks via the `AskUserQuestion` tool, walking from a basic
-question toward a more advanced one on that same strand.
+linear algebra, multivariable integration).
 
-**Before building each question's options, use a real random draw for
+Ask calibration checks in **batched rounds**, not one question per tool
+call. `AskUserQuestion` accepts up to 4 questions in a single call, and
+strands are independent, so there is no need to finish one strand before
+starting the next — asking them one call at a time is exactly what makes
+Probe feel slow. Instead:
+
+1. **Round 1 (basic level):** draft the basic question for every strand
+   in one pass, then submit all of them together in as few
+   `AskUserQuestion` calls as needed (up to 4 questions per call — only
+   split across multiple calls if there are more than 4 strands).
+2. Evaluate every answer from the round, then decide per strand: if
+   answered correctly, that strand continues — draft its next, more
+   advanced question for the following round. If answered incorrectly
+   (or "I don't know"), stop climbing that strand right there: everything
+   below the failed question counts as `known`, the failed question and
+   beyond count as `unknown`. A strand that stops does not enter the next
+   round.
+3. Submit the next round the same way — batched into as few
+   `AskUserQuestion` calls as needed, covering only the strands still
+   climbing. Repeat: batch a round, evaluate, drop strands that just hit
+   their boundary, continue with what's left, until every strand has
+   localized its boundary.
+
+**Before building any question's options, use a real random draw for
 the correct answer's position. Do not just "decide" a position
-yourself.** Once per session, before the first calibration question, run:
+yourself.** Before the first round, run:
 
 ```bash
 od -An -N16 -tu1 /dev/urandom
 ```
 
 This prints 16 random bytes. Take each byte modulo 4 to get a queue of
-positions (0-3); consume them in order, one per question, using the next
-one as the index of the option that holds the correct answer. Run the
-command again if the queue runs out. This form is deliberate: it
-contains no shell variable syntax for the sandbox's static-safety check
-to block (see section 0), and it avoids one Bash round-trip per
-question. Deciding positions by your own judgment reliably produces
+positions (0-3); consume them in order, one per question across the
+round (and across later rounds), using the next one as the index of the
+option that holds the correct answer. Run the command again if the queue
+runs out. This form is deliberate: it contains no shell variable syntax
+for the sandbox's static-safety check to block (see section 0), and one
+draw covers a whole round (or more) instead of costing a Bash round-trip
+per question. Deciding positions by your own judgment reliably produces
 the same pattern every time (you generate the correct answer first, as
 the "obvious" content, then place it): that is not randomization, it is
 a predictable habit, and it turns the check into a position-guessing
-exercise instead of a measure of understanding. `AskUserQuestion`'s own convention of putting a
-recommended option first is for preference decisions; a calibration
-check has no "recommended" option, it has a correct one. Do not add
-"(Recommended)" to any option here.
+exercise instead of a measure of understanding. `AskUserQuestion`'s own
+convention of putting a recommended option first is for preference
+decisions; a calibration check has no "recommended" option, it has a
+correct one. Do not add "(Recommended)" to any option here.
 
-1. Ask a basic question on the strand.
-2. If answered correctly, ask a more advanced question on the same
-   strand.
-3. If answered incorrectly (or "I don't know"), stop climbing that
-   strand: everything below the failed question counts as `known`,
-   the failed question and beyond count as `unknown`.
-4. Move to the next independent strand and repeat, starting that strand
-   at its own basic level (strands are independent — a failure on one
-   doesn't imply anything about another).
-
-Stop probing a strand once you've localized the boundary; stop probing
-altogether once every strand you identified has been covered. After each
-strand, append its concepts to the Understanding Map — recording the
-strand's own name or label in the `Strand` column for every concept on it,
-since Resume depends on that column to know which strands are already
-covered — with status `known` / `unknown` and `established_via: calibration`,
-and write the note to disk before moving to the next strand, so an
-interruption mid-Probe only loses the strand in progress, not the whole
-phase. Probe alone only ever produces `known` or `unknown`; `partial` is
-reserved for applied checks
+Stop probing altogether once every strand you identified has been
+covered. After each round, append the concepts it settled to the
+Understanding Map — recording the strand's own name or label in the
+`Strand` column for every concept on it, since Resume depends on that
+column to know which strands are already covered — with status `known` /
+`unknown` and `established_via: calibration`, and write the note to disk
+before starting the next round, so an interruption mid-Probe only loses
+the round in progress, not the whole phase. Probe alone only ever
+produces `known` or `unknown`; `partial` is reserved for applied checks
 (see the Exception below and section 4).
 
 Exception: if an answer is a close borderline case you're not confident
@@ -185,7 +196,10 @@ about, follow up with **one** applied check (see section 4) on that
 specific concept before recording its status: `known` if the applied
 check confirms it cleanly, `partial` if it reveals a right-answer-wrong-
 reason or wrong-answer-right-reasoning split, `unknown` if the reasoning
-was fundamentally wrong. Do this rarely — Probe should stay fast.
+was fundamentally wrong. Do this rarely — Probe should stay fast. This
+check can't be batched into the round — its content depends on the
+specific answer that triggered it — so run it as a one-off outside the
+batching above.
 
 ## 3. Plan — curriculum + fact-check + dependency graph
 
