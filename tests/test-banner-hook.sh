@@ -37,6 +37,18 @@ if ! echo "$OUTPUT" | jq -r '.systemMessage' | grep -q "socrates v"; then
 fi
 echo "PASS: banner shown when socrates.config.json present (valid JSON with systemMessage)"
 
+# The [Skills] list must mention both shipped skills, not just teach.
+SKILLS_MSG=$(echo "$OUTPUT" | jq -r '.systemMessage')
+if ! echo "$SKILLS_MSG" | grep -q "teach"; then
+  echo "FAIL: expected banner skills list to mention 'teach', got: $OUTPUT"
+  exit 1
+fi
+if ! echo "$SKILLS_MSG" | grep -q "goal"; then
+  echo "FAIL: expected banner skills list to mention 'goal', got: $OUTPUT"
+  exit 1
+fi
+echo "PASS: banner skills list mentions both teach and goal"
+
 # Case 3: fallback socrates-notes/ folder present -> banner shown
 mkdir -p "$TMP/withnotes/socrates-notes"
 OUTPUT=$(printf '{"cwd": "%s"}' "$TMP/withnotes" | env HOME="$ISOLATED_HOME" "$BANNER")

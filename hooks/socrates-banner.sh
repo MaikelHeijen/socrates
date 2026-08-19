@@ -51,6 +51,7 @@ BANNER_TEXT+="   ██████████████████"$'\n'
 BANNER_TEXT+=$'\n'"socrates v$VERSION${RESET}"$'\n'
 BANNER_TEXT+=$'\n'"[Skills]"$'\n'
 BANNER_TEXT+="  teach"$'\n'
+BANNER_TEXT+="  goal"$'\n'
 BANNER_TEXT+=$'\n'"Linked: $CWD"
 
 # Output as compact JSON with systemMessage
