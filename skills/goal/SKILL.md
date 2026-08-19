@@ -1,6 +1,6 @@
 ---
 name: goal
-description: Adaptive Socratic tutor. Extracts the technical skill gap from a role description, job posting, or free-text career goal, probes current understanding against it, and plans an ordered topic roadmap handed off to /socrates:teach. Use for "/socrates:goal <role description|job posting URL|free text>", or "/socrates:goal" with no argument to pick from goals already in progress.
+description: Turns a role description, job posting, or free-text career goal into a fact-checked, ordered topic roadmap: extracts the technical skill gap, probes current understanding against it, and hands each topic off to /socrates:teach. Use for "/socrates:goal <role description|job posting URL|free text>", or "/socrates:goal" with no argument to pick from goals already in progress.
 ---
 
 # Goal
@@ -128,28 +128,46 @@ exists at that path.
   column to identify which strands (skill areas) are already covered, and
   resume Probe only on the strands not yet covered. Tell the user in one
   sentence that you're resuming the calibration phase. If the
-  Understanding Map already covers every strand extracted in step 2, treat
-  Probe as complete and proceed directly to Plan.
+  Understanding Map already covers every strand listed in the note's Role
+  Requirements section, treat Probe as complete and proceed directly to
+  Plan.
 - **Exists with `status: planning`**: the Understanding Map is complete
   but Plan didn't finish (e.g. interrupted during fact-checking). Resume
   Plan from the existing Understanding Map — re-running Plan's reasoning
   from scratch is fine, since Plan produces no user-facing questions.
 - **Exists with `status: active`**: read the note. For each topic in the
-  Roadmap table, look up `<working note root>/<topic>/<topic>.md` (the
-  same location `/socrates:teach` would use for that exact topic string)
-  and, if it exists, read its frontmatter `status`: `teaching` →
-  `in_progress`, `done` → `done`; if no such note exists yet →
+  Roadmap table, look up that topic's own note the same way
+  `/socrates:teach` would: apply the same `/` → `-` filename-safety
+  replacement from section 0 to the topic string, and apply the same
+  case-insensitive, existing-casing lookup rule from section 0 (an
+  existing folder's casing wins over the roadmap's freshly-recorded
+  casing). Check `<working note root>/<topic>/<topic>.md` first; if no
+  note exists there, also check `./socrates-notes/<topic>/<topic>.md`
+  (applying the same replacement) if that location differs from the
+  working note root — mirroring section 0's dual-location rule, since a
+  topic note can be stranded under `./socrates-notes/` the same way a
+  goal note can. If a note is found anywhere, read its frontmatter
+  `status`: `done` → `done`; any other status (`probing`, `planning`, or
+  `teaching`) → `in_progress`, since the user has started but not
+  finished that topic. If no such note exists in either location →
   `not_started`. Rewrite the Roadmap table with these refreshed statuses
   and save. Tell the user where they stand (e.g. "2 of 5 topics done") and
-  name the next `not_started` (or, failing that, `in_progress`) topic,
-  with the exact command to run it: `/socrates:teach <topic>`. If every
-  topic is now `done`, set this note's `status: done` instead and proceed
-  to the `status: done` behavior below.
-- **Exists with `status: done`**: tell the user this goal is already
-  complete and ask if they want to review it or start a new goal. If they
-  want to review: walk back through the Roadmap and Understanding Map with
-  them without changing `status`. If they want a new goal: begin a fresh
-  Requirements extraction for that instead — it's a different note.
+  name the next topic to work on: prefer an `in_progress` topic first, if
+  one exists (finish what's already underway before starting something
+  new); only fall back to the first `not_started` topic if none is
+  `in_progress`. Give the exact command to run it: `/socrates:teach
+  <topic>`. If every topic is now `done`, set this note's `status: done`
+  instead and tell the user, in a congratulations/completion-style
+  message, that they've finished this goal's entire roadmap — do not use
+  the "already complete" framing below for this case, since the goal is
+  only just finishing in this same turn.
+- **Exists with `status: done`** (i.e. it was already `status: done`
+  before this session started, not a goal that just finished above): tell
+  the user this goal is already complete and ask if they want to review
+  it or start a new goal. If they want to review: walk back through the
+  Roadmap and Understanding Map with them without changing `status`. If
+  they want a new goal: begin a fresh Requirements extraction for that
+  instead — it's a different note.
 
 ## 2. Requirements extraction — role → skill areas
 
@@ -182,9 +200,24 @@ Resume above for what to do if it was interrupted).
 3. If step 2 identifies **zero** technical skill areas — the input isn't
    actually a role or job description, or is too generic to extract
    anything concrete from — stop here. Do not create or advance the
-   Understanding Map. Tell the user you couldn't extract a technical
-   learning goal from what they gave you, and ask them to describe the
-   role or paste the posting.
+   Understanding Map.
+   - If the note was newly created this turn (a brand-new goal, not a
+     resume of an existing note that was already stuck in `status:
+     probing` with empty Role Requirements/Out of Scope): delete the note
+     file, and its folder too if the folder is now empty as a result,
+     before saying anything else — a failed brand-new attempt should
+     leave no trace on disk, so it doesn't show up in a later no-argument
+     goal listing or trap a retry in a loop against the same bad input.
+     Then tell the user you couldn't extract a technical learning goal
+     from what they gave you, and ask them to describe the role or paste
+     the posting.
+   - If this is a resume of an existing note already stuck in this state:
+     leave the note in place (deleting it would not help, since the same
+     input would just recreate it in the same state). Make the message to
+     the user explicit that re-running with the same input will fail the
+     same way again, and that they need to provide different input —
+     describe the role differently, or paste the actual posting — rather
+     than simply retrying.
 4. If step 2 identifies skill areas but they're too vague to write a
    concrete calibration question against (e.g. "senior software engineer"
    with no stack, domain, or company context) — ask **one** clarifying
@@ -199,8 +232,8 @@ Resume above for what to do if it was interrupted).
 ## 3. Probe — calibration checks
 
 Identical mechanism to `/socrates:teach`'s Probe, with one difference: the
-strands are the technical skill areas from step 2, not the prerequisites
-of a single named topic.
+strands are the technical skill areas listed in the note's Role
+Requirements section, not the prerequisites of a single named topic.
 
 Goal: build an Understanding Map without teaching anything yet.
 
@@ -279,8 +312,10 @@ fundamentally wrong. Do this rarely — Probe should stay fast.
    and report back which are confirmed, which are wrong (with the
    correction), and which it could not verify.
 4. Incorporate any corrections. For claims the sub-agent could not
-   verify, keep them but mark them `⚠ unverified` in the Roadmap section
-   — do not block the plan on this.
+   verify, keep them but mark them `⚠ unverified` in the **Notes** column
+   of the Roadmap table (see Working Note Format below) — never inside
+   the Topic cell, since that string must stay usable verbatim as a
+   `/socrates:teach` argument. Do not block the plan on this.
 5. Render the roadmap as a Mermaid `graph TD` dependency graph, one node
    per topic, edges pointing from prerequisite to dependent topic. As
    with `/socrates:teach`, reasoning this out explicitly is what keeps
@@ -294,8 +329,12 @@ fundamentally wrong. Do this rarely — Probe should stay fast.
    every topic in order with status `not_started`.
 8. Tell the user the roadmap is ready, show the Mermaid graph, name the
    first topic, and tell them the exact command to start it:
-   `/socrates:teach <topic>`. Do not begin teaching it yourself — that
-   flow belongs entirely to `/socrates:teach`.
+   `/socrates:teach <topic>`. Also state the Out of Scope items from the
+   note in this same closing message, clearly labeled as things Socrates
+   does not teach — a user who never opens the note file should still
+   learn what this roadmap intentionally leaves out. Do not begin
+   teaching the first topic yourself — that flow belongs entirely to
+   `/socrates:teach`.
 
 ## Working Note Format
 
@@ -328,9 +367,9 @@ graph TD
   a[<topic a>] --> b[<topic b>]
 ```
 
-| Order | Topic | Status |
-|---|---|---|
-| 1 | <topic name, usable verbatim as a /socrates:teach argument> | not_started / in_progress / done |
+| Order | Topic | Status | Notes |
+|---|---|---|---|
+| 1 | <topic name, usable verbatim as a /socrates:teach argument> | not_started / in_progress / done | <e.g. ⚠ unverified, if applicable> |
 ````
 
 ## Error Handling
@@ -351,8 +390,8 @@ graph TD
   to it by name, and `/socrates:teach`'s own Resume logic picks it up
   where it left off. No special handling needed here.
 - Research sub-agent fails, times out, or can't verify a claim: keep
-  going, mark the claim `⚠ unverified` in the Roadmap section instead of
-  blocking.
+  going, mark the claim `⚠ unverified` in the Notes column of the Roadmap
+  table instead of blocking — never inside the Topic cell.
 - `resolve-config.sh` reports `source: "none"`: warn once per session,
   use `./socrates-notes/`, do not repeat the warning later.
 - `resolve-config.sh` fails to run at all (permission denied, crash, no

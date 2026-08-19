@@ -69,13 +69,25 @@ the rest of the session — use its exact casing for both the folder and the
 `.md` filename (not the freshly-typed argument's casing) when reading or
 writing it, so the file you look for is the file that's actually there.
 
+Note that a topic note (from `/socrates:teach`) and a goal note (from
+`/socrates:goal`) can share the same working note root and the same
+`<Name>/<Name>.md` layout — they are told apart by the frontmatter `type`
+field (`socrates-session` for a topic, `socrates-goal` for a goal), not by
+folder structure. When matching an existing folder above, only treat it as
+*this* topic if its note's frontmatter declares `type: socrates-session`; a
+same-named goal note is a different thing entirely and must never be
+treated as an existing topic, and must never be read, resumed, or written
+to by this skill.
+
 If the user ran `/socrates:teach` with **no topic argument**: use `Glob` to
 list every `<Topic>/<Topic>.md` file directly under the working note root,
 **and also** under `./socrates-notes/` (relative to the current directory),
 if that folder exists and isn't the same location — sessions can be
 sitting there from before a config existed, or from a previous config
 resolution, and would otherwise silently vanish from view the moment the
-config changes.
+config changes. Read each match's frontmatter and keep only the ones
+declaring `type: socrates-session` — a goal note matched by the same glob
+is not a topic and must be filtered out.
 
 - **None exist anywhere**: ask what topic they'd like to start, then
   proceed to Probe as normal once they answer.

@@ -152,9 +152,29 @@ Learning more than one thing? Run `/socrates:teach` with no topic and
 it'll list what's already in progress so you can pick one, instead of
 having to remember and retype the exact topic string.
 
+### Don't know what to learn yet? `/socrates:goal`
+
+```
+/socrates:goal <role description | job posting URL | free text>
+```
+
+Give it a role description, a job posting URL, or free-text career goal
+and it extracts the technical skill gap, probes what you already know
+against it, and produces an ordered topic roadmap (with a dependency
+graph, just like `/socrates:teach`'s curriculum) — along with a clear
+list of things in the posting that Socrates doesn't teach (experience,
+seniority, location/visa, hiring process). It never teaches anything
+itself: once the roadmap is ready, you work through it topic by topic
+with `/socrates:teach <topic>`.
+
+Like `/socrates:teach`, running `/socrates:goal` with no argument lists
+goals already in progress so you can pick one up where you left off.
+
 ## How it's built
 
 - `skills/teach/SKILL.md`: the orchestration instructions.
+- `skills/goal/SKILL.md`: the role/job-posting → topic-roadmap
+  orchestration instructions, handing off per topic to `/socrates:teach`.
 - `scripts/resolve-config.sh`: finds your `socrates.config.json`,
   local or global (see Configure above).
 - `scripts/svg-check.sh`: renders a diagram and hands it back so a

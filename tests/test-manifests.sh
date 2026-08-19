@@ -80,4 +80,10 @@ if ! grep -q "^name: goal$" "$SKILL_FILE_GOAL"; then
 fi
 echo "PASS: goal skill frontmatter declares its name"
 
+if ! grep -q "type: socrates-goal" "$SKILL_FILE_GOAL"; then
+  echo "FAIL: skills/goal/SKILL.md must reference 'type: socrates-goal' (the collision-safety marker distinguishing goal notes from topic notes)"
+  exit 1
+fi
+echo "PASS: goal skill references the 'type: socrates-goal' collision-safety marker"
+
 echo "ALL TESTS PASSED"
